@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lore - Zombie Survival</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header>
+    <h1>Zombie Survival: The Board Game</h1>
+    <nav>
+        <a href="index.html">Home</a>
+        <a href="lore.html">Lore</a>
+        <a href="game-info.html">Game Info</a>
+        <a href="faq.html">FAQ</a>
+        <a href="playbook.html">Playbook</a>
+        <a href="community.html">Community</a>
+    </nav>
+</header>
+
+<div class="container">
+    <h2>Lore</h2>
+    <p>In a world devastated by a zombie outbreak, humanity struggles to survive. The infection spread rapidly, turning ordinary people into mindless, flesh-eating monsters. Cities fell, governments collapsed, and society as we knew it disintegrated.</p>
+    
+    <h3>The Outbreak</h3>
+    <p>The outbreak began in a small town but quickly spread across the globe. Panic ensued as people fought for survival, leading to chaos and destruction. Survivors banded together to create makeshift communities, but trust became a rare commodity.</p>
+    
+    <h3>Survivor Factions</h3>
+    <p>As the world changed, different factions emerged, each with its own beliefs and survival strategies:</p>
+    <ul>
+        <li><strong>The Guardians:</strong> A group focused on protecting the innocent and rebuilding society. They believe in cooperation and share resources among survivors.</li>
+        <li><strong>The Raiders:</strong> Ruthless scavengers who take what they need by force. They live by the motto "survival of the fittest," often leading to violent confrontations.</li>
+        <li><strong>The Scavengers:</strong> Resourceful individuals who thrive on finding supplies and information. They are known for their cunning and ingenuity.</li>
+        <li><strong>The Cult of the Undead:</strong> A mysterious group that worships the zombies, believing they are the next step in evolution. They seek to spread the infection willingly.</li>
+    </ul>
+    
+    <h3>The Zombie Threat</h3>
+    <p>Players will encounter various types of zombies, including:</p>
+    <ul>
+        <li><strong>Walkers:</strong> Slow but relentless, these zombies are the most common. They are drawn to noise and will pursue players without rest.</li>
+        <li><strong>Runners:</strong> Fast and aggressive, they can catch players off guard with their speed. They are often found in packs, making them particularly dangerous.</li>
+        <li><strong>Brutes:</strong> Large and powerful, they can break through barricades and deal significant damage. Their presence often signals a dire situation.</li>
+        <li><strong>Special Infected:</strong> Unique zombies with special abilities, such as spitting acid or creating distractions. These are rare but can change the tide of battle.</li>
+    </ul>
+    
+    <h3>Your Role</h3>
+    <p>As a player, you will take on the role of a survivor, navigating through this treacherous world, making choices that will affect your fate and that of your companions. Will you lead your team to safety or succumb to the horrors of the apocalypse?</p>
+    
+    <h3>Player Characters</h3>
+    <p>Each player can choose from a diverse cast of characters, each with unique abilities and backstories. Here are a few examples:</p>
+    <ul>
+        <li><strong>The Medic:</strong> Specializes in healing and support, capable of reviving fallen teammates and providing buffs.</li>
+        <li><strong>The Hunter:</strong> Expert in ranged combat, able to take down zombies from a distance and gather resources stealthily.</li>
+        <li><strong>The Engineer:</strong> Skilled in building barricades and traps, providing tactical advantages in combat scenarios.</li>
+        <li><strong>The Brawler:</strong> A melee specialist who excels in close combat, capable of taking down zombies with brute strength.</li>
+    </ul>
+
+    <h3>Interactive Lore Quiz</h3>
+    <p>Test your knowledge of the game's lore!</p>
+    <button onclick="startQuiz()">Start Quiz</button>
+    <div id="quiz-container" style="display:none;">
+        <h4>Question 1: What is the primary goal of The Guardians?</h4>
+        <button onclick="checkAnswer(true)">Protect the innocent</button>
+        <button onclick="checkAnswer(false)">Scavenge resources</button>
+        <div id="quiz-result"></div>
+    </div>
+</div>
+
+<footer>
+    <p>© 2024 Zombie Survival: The Board Game | All Rights Reserved</p>
+</footer>
+
+<script>
+    function startQuiz() {
+        document.getElementById("quiz-container").style.display = "block";
+    }
+
+    function checkAnswer(isCorrect) {
+        const result = document.getElementById("quiz-result");
+        if (isCorrect) {
+            result.innerHTML = "Correct! The Guardians aim to protect the innocent.";
+        } else {
+            result.innerHTML = "Incorrect. The Guardians focus on protection.";
+        }
+    }
+</script>
+
+</body>
+</html>

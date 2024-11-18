@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zombie Board Game</title>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 1200px;
+            margin: auto;
+        }
+
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(20, 1fr);
+            gap: 2px;
+            background: #2c3e50;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .tile {
+            width: 35px;
+            height: 35px;
+            border: 1px solid #34495e;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #2c3e50;
+            font-size: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .current-position {
+            background: #27ae60;
+            animation: pulse 1s infinite;
+        }
+
+        .zombie-tile {
+            background: #c0392b;
+        }
+
+        .chest-tile {
+            background: #f1c40f;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+        }
+
+        .status-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            background: #34495e;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .status-item {
+            text-align: center;
+            padding: 5px;
+            background: #2c3e50;
+            border-radius: 5px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #34495e;
+            padding: 20px;
+            border-radius: 10px;
+            z-index: 100;
+            min-width: 300px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .combat-container {
+            background: #2c3e50;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .health-bar {
+            width: 100%;
+            height: 20px;
+            background: #e74c3c;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .health-bar-fill {
+            height: 100%;
+            background: #2ecc71;
+            transition: width 0.3s ease;
+        }
+
+        .combat-log {
+            max-height: 150px;
+            overflow-y: auto;
+            background: #2c3e50;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+
+        .popup {
+            display: none;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #27ae60;
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+
+        .shop-item, .inventory-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: #2c3e50;
+            margin: 5px 0;
+            border-radius: 5px;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            cursor: pointer;
+            font-size: 20px;
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 90;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="status-bar">
+            <div class="status-item">Health: <span id="health">100</span></div>
+            <div class="status-item">Cash: $<span id="cash">0</span></div>
+            <div class="status-item">Position: <span id="position">1</span></div>
+            <div class="status-item">Weapon: <span id="weapon">Fists</span></div>
+            <div class="status-item">Armor: <span id="armor">None</span></div>
+            <div class="status-item">Zombies: <span id="zombiesLeft">25</span></div>
+        </div>
+
+        <div class="controls">
+            <button onclick="rollDice()">Roll Dice 🎲</button>
+            <button onclick="openShop()">Shop 🛍️</button>
+            <button onclick="openInventory()">Inventory 🎒</button>
+        </div>
+
+        <div class="game-board" id="gameBoard"></div>
+    </div>
+
+    <!-- Combat Modal -->
+    <div id="combatModal" class="modal">
+        <div class="modal-content">
+            <h2>Combat! 🗡️</h2>
+            <div class="combat-container">
+                <div>Your Health:
+                    <div class="health-bar">
+                        <div id="playerHealthBar" class="health-bar-fill"></div>
+                    </div>
+                </div>
+                <div>Zombie Health:
+                    <div class="health-bar">
+                        <div id="zombieHealthBar" class="health-bar-fill"></div>
+                    </div>
+                </div>
+                <button onclick="attackZombie()">Attack 🗡️</button>
+                <button onclick="fleeCombat()">Flee 🏃</button>
+                <div id="combatLog" class="combat-log"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shop Modal -->
+    <div id="shopModal" class="modal">
+        <span class="modal-close" onclick="closeModal('shopModal')">×</span>
+        <h2>Shop 🛍️</h2>
+        <div id="shopItems" class="modal-content"></div>
+    </div>
+
+    <!-- Inventory Modal -->
+    <div id="inventoryModal" class="modal">
+        <span class="modal-close" onclick="closeModal('inventoryModal')">×</span>
+        <h2>Inventory 🎒</h2>
+        <div id="inventoryItems" class="modal-content"></div>
+    </div>
+
+    <div id="overlay" class="overlay"></div>
+    <div id="popup" class="popup"></div>
+
+    <script>
+        // Game constants
+        const BOARD_SIZE = 200;
+        const ZOMBIE_COUNT = 25;
+        const CHEST_PROBABILITY = 0.15;
+
+        // Game state
+        let playerPosition = 1;
+        let playerHealth = 100;
+        let playerCash = 0;
+        let zombiePositions = new Set();
+        let chestPositions = new Set();
+        let currentWeapon = { name: 'Fists', damage: 5 };
+        let currentArmor = { name: 'None', defense: 0 };
+        let inventory = [];
+        let inCombat = false;
+        let currentZombieHealth = 50;
+        let currentZombiePosition = null;
+
+        // Shop items
+        const shopItems = [
+            { name: 'Baseball Bat', type: 'weapon', damage: 10, price: 50 },
+            { name: 'Knife', type: 'weapon', damage: 15, price: 100 },
+            { name: 'Pistol', type: 'weapon', damage: 25, price: 200 },
+            { name: 'Leather Jacket', type: 'armor', defense: 2, price: 75 },
+            { name: 'Kevlar Vest', type: 'armor', defense: 5, price: 150 },
+            { name: 'Health Kit', type: 'consumable', heal: 50, price: 100 }
+        ];
+
+        function initGame() {
+            // Place zombies
+            while (zombiePositions.size < ZOMBIE_COUNT) {
+                const pos = Math.floor(Math.random() * BOARD_SIZE) + 1;
+                if (pos !== 1) zombiePositions.add(pos);
+            }
+
+            // Place chests
+            for (let i = 1; i <= BOARD_SIZE; i++) {
+                if (Math.random() < CHEST_PROBABILITY && !zombiePositions.has(i) && i !== 1) {
+                    chestPositions.add(i);
+                }
+            }
+
+            updateBoard();
+            updateStatus();
+        }
+
+        function updateBoard() {
+            const board = document.getElementById('gameBoard');
+            board.innerHTML = '';
+
+            for (let i = 1; i <= BOARD_SIZE; i++) {
+                const tile = document.createElement('div');
+                tile.className = 'tile';
+                
+                if (i === playerPosition) {
+                    tile.classList.add('current-position');
+                    tile.innerHTML = '🧑';
+                } else if (zombiePositions.has(i)) {
+                    tile.classList.add('zombie-tile');
+                    tile.innerHTML = '🧟';
+                } else if (chestPositions.has(i)) {
+                    tile.classList.add('chest-tile');
+                    tile.innerHTML = '📦';
+                }
+
+                board.appendChild(tile);
+            }
+        }
+
+        function updateStatus() {
+            document.getElementById('health').textContent = playerHealth;
+            document.getElementById('cash').textContent = playerCash;
+            document.getElementById('position').textContent = playerPosition;
+            document.getElementById('weapon').textContent = currentWeapon.name;
+            document.getElementById('armor').textContent = currentArmor.name;
+            document.getElementById('zombiesLeft').textContent = zombiePositions.size;
+        }
+
+        function rollDice() {
+            if (inCombat) return;
+            const roll = Math.floor(Math.random() * 12) + 1;
+            showPopup(`Rolled a ${roll}! 🎲`);
+            movePlayer(roll);
+        }
+
+        function movePlayer(spaces) {
+            const newPosition = Math.min(playerPosition + spaces, BOARD_SIZE);
+            playerPosition = newPosition;
+
+            if (zombiePositions.has(playerPosition)) {
+                startCombat(playerPosition);
+            } else if (chestPositions.has(playerPosition)) {
+                collectChest(playerPosition);
+            }
+
+            updateBoard();
+            updateStatus();
+            checkWinCondition();
+        }
+
+        function startCombat(position) {
+            inCombat = true;
+            currentZombiePosition = position;
+            currentZombieHealth = 50;
+            document.getElementById('combatModal').style.display = 'block';
+            document.getElementById('overlay').style.display = 'block';
+            updateCombatUI();
+            logCombatAction('Combat started! 🗡️');
+        }
+
+        function updateCombatUI() {
+            document.getElementById('playerHealthBar').style.width = `${playerHealth}%`;
+            document.getElementById('zombieHealthBar').style.width = `${currentZombieHealth * 2}%`;
+        }
+
+        function attackZombie() {
+            if (!inCombat) return;
+
+            const playerDamage = Math.floor(Math.random() * currentWeapon.damage) + 1;
+            currentZombieHealth -= playerDamage;
+
+            if (currentZombieHealth > 0) {
+                const zombieDamage = Math.max(0, Math.floor(Math.random() * 8) + 1 - currentArmor.defense);
+                playerHealth -= zombieDamage;
+                logCombatAction(`You deal ${playerDamage} damage! 🗡️ Zombie deals ${zombieDamage} damage! 🧟`);
+            } else {
+                zombieDefeated();
+            }
+
+            updateCombatUI();
+            updateStatus();
+            checkGameOver();
+        }
+
+        function logCombatAction(message) {
+            const log = document.getElementById('combatLog');
+            log.innerHTML = `<div>${message}</div>` + log.innerHTML;
+        }
+
+        function zombieDefeated() {
+            zombiePositions.delete(currentZombiePosition);
+            const reward = Math.floor(Math.random() * 50) + 50;
+            playerCash += reward;
+            inCombat = false;
+            closeModal('combatModal');
+            showPopup(`Zombie defeated! Got $${reward}! 💰`);
+            updateBoard();
+            updateStatus();
+        }
+
+        function fleeCombat() {
+            if (!inCombat) return;
+            const fleeChance = Math.random();
+            if (fleeChance > 0.3) {
+                playerPosition = Math.max(1, playerPosition - 3);
+                inCombat = false;
+                closeModal('combatModal');
+                showPopup('Successfully fled from combat! 🏃');
+            } else {
+                const damage = Math.max(0, Math.floor(Math.random() * 15) + 5 - currentArmor.defense);
+                playerHealth -= damage;
+                logCombatAction(`Failed to flee! Took ${damage} damage! 💥`);
+                updateCombatUI();
+                updateStatus();
+            }
+            updateBoard();
+            checkGameOver();
+        }
+
+         function collectChest(position) {
+            const reward = Math.floor(Math.random() * 100) + 50;
+            playerCash += reward;
+            chestPositions.delete(position);
+            showPopup(`Found $${reward} in the chest! 💰`);
+            updateBoard();
+            updateStatus();
+        }
+
+        function checkGameOver() {
+            if (playerHealth <= 0) {
+                alert('Game Over! You died! 💀');
+                resetGame();
+            }
+        }
+
+        function checkWinCondition() {
+            if (zombiePositions.size === 0) {
+                alert('Congratulations! You cleared all zombies! 🏆');
+                resetGame();
+            }
+        }
+
+        function resetGame() {
+            playerPosition = 1;
+            playerHealth = 100;
+            playerCash = 0;
+            currentWeapon = { name: 'Fists', damage: 5 };
+            currentArmor = { name: 'None', defense: 0 };
+            inventory = [];
+            zombiePositions.clear();
+            chestPositions.clear();
+            inCombat = false;
+            initGame();
+        }
+
+        function openShop() {
+            const shopContainer = document.getElementById('shopItems');
+            shopContainer.innerHTML = '';
+
+            shopItems.forEach(item => {
+                const itemElement = document.createElement('div');
+                itemElement.className = 'shop-item';
+                itemElement.innerHTML = `
+                    <span>${item.name} - $${item.price}</span>
+                    <button onclick="buyItem('${item.name}')" 
+                            ${playerCash < item.price ? 'disabled' : ''}>
+                        Buy 💰
+                    </button>
+                `;
+                shopContainer.appendChild(itemElement);
+            });
+
+            document.getElementById('shopModal').style.display = 'block';
+            document.getElementById('overlay').style.display = 'block';
+        }
+
+        function buyItem(itemName) {
+            const item = shopItems.find(i => i.name === itemName);
+            if (!item || playerCash < item.price) return;
+
+            playerCash -= item.price;
+            
+            if (item.type === 'weapon') {
+                if (currentWeapon.name !== 'Fists') {
+                    inventory.push(currentWeapon);
+                }
+                currentWeapon = { name: item.name, damage: item.damage };
+            } else if (item.type === 'armor') {
+                if (currentArmor.name !== 'None') {
+                    inventory.push(currentArmor);
+                }
+                currentArmor = { name: item.name, defense: item.defense };
+            } else if (item.type === 'consumable') {
+                inventory.push(item);
+            }
+
+            showPopup(`Bought ${item.name}! 🛍️`);
+            updateStatus();
+            openShop(); // Refresh shop display
+        }
+
+        function openInventory() {
+            const inventoryContainer = document.getElementById('inventoryItems');
+            inventoryContainer.innerHTML = '';
+
+            if (inventory.length === 0) {
+                inventoryContainer.innerHTML = '<div class="inventory-item">No items in inventory</div>';
+            } else {
+                inventory.forEach((item, index) => {
+                    const itemElement = document.createElement('div');
+                    itemElement.className = 'inventory-item';
+                    let useButton = '';
+                    
+                    if (item.type === 'consumable') {
+                        useButton = `<button onclick="useItem(${index})">Use 🔧</button>`;
+                    } else {
+                        useButton = `<button onclick="equipItem(${index})">Equip ⚔️</button>`;
+                    }
+
+                    itemElement.innerHTML = `
+                        <span>${item.name}</span>
+                        ${useButton}
+                    `;
+                    inventoryContainer.appendChild(itemElement);
+                });
+            }
+
+            document.getElementById('inventoryModal').style.display = 'block';
+            document.getElementById('overlay').style.display = 'block';
+        }
+
+        function useItem(index) {
+            const item = inventory[index];
+            if (!item) return;
+
+            if (item.type === 'consumable') {
+                playerHealth = Math.min(100, playerHealth + item.heal);
+                inventory.splice(index, 1);
+                showPopup(`Used ${item.name}! Health restored! ❤️`);
+                updateStatus();
+                openInventory(); // Refresh inventory display
+            }
+        }
+
+        function equipItem(index) {
+            const item = inventory[index];
+            if (!item) return;
+
+            if (item.damage) { // It's a weapon
+                const oldWeapon = currentWeapon;
+                currentWeapon = item;
+                inventory[index] = oldWeapon;
+            } else if (item.defense) { // It's armor
+                const oldArmor = currentArmor;
+                currentArmor = item;
+                inventory[index] = oldArmor;
+            }
+
+            showPopup(`Equipped ${item.name}! ⚔️`);
+            updateStatus();
+            openInventory(); // Refresh inventory display
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+            document.getElementById('overlay').style.display = 'none';
+        }
+
+        function showPopup(message) {
+            const popup = document.getElementById('popup');
+            popup.textContent = message;
+            popup.style.display = 'block';
+            setTimeout(() => {
+                popup.style.display = 'none';
+            }, 3000);
+        }
+
+        // Initialize game when page loads
+        window.onload = initGame;
+
+        // Close modals when clicking overlay
+        document.getElementById('overlay').onclick = function() {
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.style.display = 'none';
+            });
+            document.getElementById('overlay').style.display = 'none';
+        };
+    </script>
+</body>
+</html>
+
